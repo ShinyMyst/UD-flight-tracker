@@ -28,9 +28,9 @@ function sendTaskReminder(){
     // Prep and send email
     if (tasks.length > 0) {
       emailAddress = emailSheet.getRange(col-startCol+emailRow, emailCol).getValue();
-      let body = 'You are missing the following tasks:\n' +
-              tasks.map(tasks => `  - ${tasks}`).join('\n') + 
-              '\n\nPlease check your Flight Tracker to get these completed.';
+      let body = '<p>You are missing the following tasks:</p><ul>' +
+              tasks.map(task => `<li>${task}</li>`).join('') + 
+              '</ul><p>Please check your Flight Tracker to get these completed.</p>';
 
       //console.log(emailAddress)
       //console.log(emailSheet.getRange(col-startCol+emailRow, emailCol-1).getValue())
@@ -45,11 +45,16 @@ function getTasks(targetCol) {
   /* Returns a list of all tasks with an X in target column */
   let tasks = [];
   let lastRow = taskSheet.getLastRow();
-
   for (let row = 1; row <= lastRow; row++) {
-    let cellValue = taskSheet.getRange(row, targetCol).getValue();     
+    let cellValue = taskSheet.getRange(row, targetCol).getValue();
     if (cellValue === '❌') {
-      let taskName = taskSheet.getRange(row, taskNameCol).getValue();
+      console.log("FOUND an X")
+      let taskCell = taskSheet.getRange(row, taskNameCol);  
+      let richTextValue = taskCell.getRichTextValue(); 
+      let taskName = richTextValue.getLinkUrl() 
+        ? `<a href="${richTextValue.getLinkUrl()}">${richTextValue.getText()}</a>` 
+        : richTextValue.getText();
+
       tasks.push(taskName)
     }
   }
@@ -58,9 +63,12 @@ function getTasks(targetCol) {
 
 
 function sendEmail(recipient, subject, body, cc=null){
-    var options = {};
+    var options = {
+      htmlBody: body
+    };
     if (cc !== null && cc.length > 0) {
         options.cc = cc.join(',');
     }
-    GmailApp.sendEmail(recipient, subject, body, options);    
+    console.log("SENDING EMAIL")
+    GmailApp.sendEmail(recipient, subject, '', options);    
 };
